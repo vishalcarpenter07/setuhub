@@ -33,6 +33,15 @@ export interface Order {
   createdAt: string;
 }
 
+export interface Trajectory {
+  id: string;
+  partnerName: string;
+  partnerPhone: string;
+  from: string;
+  to: string;
+  createdAt: string;
+}
+
 interface AppContextProps {
   currentScreen: ScreenType;
   setScreen: (screen: ScreenType) => void;
@@ -52,9 +61,38 @@ interface AppContextProps {
     distance: number;
   };
   addEarnings: (amount: number, dist: number) => void;
+  trajectories: Trajectory[];
+  registerTrajectory: (from: string, to: string) => void;
 }
 
 const AppContext = createContext<AppContextProps | undefined>(undefined);
+
+const INITIAL_TRAJECTORIES: Trajectory[] = [
+  {
+    id: 'TR-4912',
+    partnerName: 'Vikram Singh',
+    partnerPhone: '+91 88899 00112',
+    from: 'Sehore Terminal',
+    to: 'Bhopal Hub Node',
+    createdAt: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: 'TR-8821',
+    partnerName: 'Amit Kumar',
+    partnerPhone: '+91 99887 76655',
+    from: 'Bhopal Hub Node',
+    to: 'Vidisha Portal',
+    createdAt: new Date(Date.now() - 7200000).toISOString(),
+  },
+  {
+    id: 'TR-1029',
+    partnerName: 'Sanjay Sharma',
+    partnerPhone: '+91 91234 56789',
+    from: 'Kurawar Gateway',
+    to: 'Sehore Terminal',
+    createdAt: new Date(Date.now() - 1800000).toISOString(),
+  }
+];
 
 const INITIAL_ORDERS: Order[] = [
   {
@@ -160,6 +198,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('setuhub-earnings', JSON.stringify(earnings));
   }, [earnings]);
+
+  const [trajectories, setTrajectories] = useState<Trajectory[]>(() => {
+    const saved = localStorage.getItem('setuhub-trajectories');
+    return saved ? JSON.parse(saved) : INITIAL_TRAJECTORIES;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('setuhub-trajectories', JSON.stringify(trajectories));
+  }, [trajectories]);
+
+  const registerTrajectory = (from: string, to: string) => {
+    const newTrajectory: Trajectory = {
+      id: `TR-${Math.floor(1000 + Math.random() * 9000)}`,
+      partnerName: 'Vikram Singh',
+      partnerPhone: '+91 88899 00112',
+      from,
+      to,
+      createdAt: new Date().toISOString(),
+    };
+    setTrajectories((prev) => [newTrajectory, ...prev]);
+  };
 
   const createOrder = (orderData: Omit<Order, 'id' | 'status' | 'partnerName' | 'partnerPhone' | 'eta' | 'pickupOTP' | 'deliveryOTP' | 'createdAt'>) => {
     const generateOTP = () => Math.floor(1000 + Math.random() * 9000).toString();
@@ -278,6 +337,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSelectedOrderId,
         earnings,
         addEarnings,
+        trajectories,
+        registerTrajectory,
       }}
     >
       {children}

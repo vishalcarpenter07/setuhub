@@ -52,6 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab }) => 
       case 'customer':
         return [
           { id: 'customer-track', label: 'Track Parcel', icon: PackageSearch },
+          { id: 'customer-routes', label: 'Available Routes', icon: Navigation },
           { id: 'customer-history', label: 'Handovers', icon: ClipboardCheck },
         ];
       case 'admin':

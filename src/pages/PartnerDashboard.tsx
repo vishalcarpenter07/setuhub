@@ -22,7 +22,7 @@ interface PartnerDashboardProps {
 }
 
 export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ activeTab, setActiveTab }) => {
-  const { orders, acceptOrder, verifyPickupOTP, verifyDeliveryOTP, earnings, setScreen } = useApp();
+  const { orders, acceptOrder, verifyPickupOTP, verifyDeliveryOTP, earnings, setScreen, registerTrajectory } = useApp();
 
   // OTP modal control
   const [otpModalOpen, setOtpModalOpen] = useState(false);
@@ -31,6 +31,37 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ activeTab, s
 
   // Selected opportunity for route map highlight
   const [selectedOppId, setSelectedOppId] = useState<string>('');
+
+  // Trajectory registration modal state
+  const [trajectoryModalOpen, setTrajectoryModalOpen] = useState(false);
+  const [trajFrom, setTrajFrom] = useState('Sehore Terminal');
+  const [trajTo, setTrajTo] = useState('Bhopal Hub Node');
+  const [trajSuccess, setTrajSuccess] = useState(false);
+
+  const villageNodes = [
+    'Bhopal Hub Node',
+    'Sehore Terminal',
+    'Kurawar Gateway',
+    'Vidisha Portal',
+    'Sonagir Depot',
+    'Mandideep Sector',
+    'Dewas Connector',
+    'Sagar Trunk Stop'
+  ];
+
+  const handleRegisterTrajectory = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (trajFrom === trajTo) {
+      alert("Origin and destination cannot be the same!");
+      return;
+    }
+    registerTrajectory(trajFrom, trajTo);
+    setTrajSuccess(true);
+    setTimeout(() => {
+      setTrajectoryModalOpen(false);
+      setTrajSuccess(false);
+    }, 1500);
+  };
 
   // Filter orders
   const availableOrders = orders.filter((o) => o.status === 'pending');
@@ -174,7 +205,7 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ activeTab, s
               </div>
               
               <button 
-                onClick={() => setActiveTab('available')}
+                onClick={() => setTrajectoryModalOpen(true)}
                 className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white text-[10px] font-medium px-3 py-1.5 rounded-lg transition-colors"
               >
                 <Sparkles className="w-3 h-3" />
@@ -507,6 +538,86 @@ export const PartnerDashboard: React.FC<PartnerDashboardProps> = ({ activeTab, s
         orderId={targetOrder?.id}
         expectedOTP={otpType === 'pickup' ? targetOrder?.pickupOTP : targetOrder?.deliveryOTP}
       />
+
+      {/* Trajectory Registration Modal Overlay */}
+      {trajectoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl border border-gray-250 p-6 w-full max-w-md shadow-2xl relative animate-fade-up">
+            <button
+              onClick={() => setTrajectoryModalOpen(false)}
+              className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-900 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-[#0284c7]/10 flex items-center justify-center text-[#0284c7]">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Register Trajectory</h3>
+                <p className="text-[9px] text-gray-500">Specify your route details to notify customers.</p>
+              </div>
+            </div>
+
+            {trajSuccess ? (
+              <div className="py-8 text-center space-y-2">
+                <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto text-xl font-bold">✓</div>
+                <h4 className="font-bold text-xs text-gray-900">Trajectory Registered!</h4>
+                <p className="text-[10px] text-gray-505">Your route is now visible on the customer dashboard.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleRegisterTrajectory} className="space-y-4">
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-[8.5px] uppercase font-bold text-gray-400 block font-mono">From (Origin Node):</label>
+                    <select
+                      value={trajFrom}
+                      onChange={(e) => setTrajFrom(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-250 rounded-xl p-2.5 text-xs text-gray-900 focus:border-[#0284c7] focus:outline-none"
+                    >
+                      {villageNodes.map(node => (
+                        <option key={node} value={node}>{node}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[8.5px] uppercase font-bold text-gray-400 block font-mono">To (Destination Node):</label>
+                    <select
+                      value={trajTo}
+                      onChange={(e) => setTrajTo(e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-250 rounded-xl p-2.5 text-xs text-gray-900 focus:border-[#0284c7] focus:outline-none"
+                    >
+                      {villageNodes.map(node => (
+                        <option key={node} value={node}>{node}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setTrajectoryModalOpen(false)}
+                    className="flex-1 bg-white hover:bg-gray-100 border border-gray-200 text-gray-700 font-bold py-2 rounded-lg text-xs uppercase tracking-wider transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-bold py-2 rounded-lg text-xs uppercase tracking-wider transition-colors"
+                  >
+                    Publish Route
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

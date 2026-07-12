@@ -8,7 +8,8 @@ import {
   Sparkles,
   Home,
   Compass,
-  ClipboardCheck
+  ClipboardCheck,
+  Navigation
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import type { Order } from '../context/AppContext';
@@ -21,8 +22,12 @@ interface CustomerDashboardProps {
 }
 
 export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ activeTab, setActiveTab }) => {
-  const { orders, verifyDeliveryOTP, selectedOrderId, setSelectedOrderId, setScreen } = useApp();
+  const { orders, verifyDeliveryOTP, selectedOrderId, setSelectedOrderId, setScreen, trajectories } = useApp();
   const [searchId, setSearchId] = useState('');
+
+  // Trajectory route availability filter states
+  const [filterFrom, setFilterFrom] = useState('');
+  const [filterTo, setFilterTo] = useState('');
 
   // Inline OTP states
   const [inlineOtp, setInlineOtp] = useState<string[]>(['', '', '', '']);
@@ -189,6 +194,7 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ activeTab,
               <div className="space-y-0.5">
                 {[
                   { id: 'customer-track', label: 'Track Package', icon: Compass },
+                  { id: 'customer-routes', label: 'Available Routes', icon: Navigation },
                   { id: 'customer-history', label: 'Receipt Ledger', icon: ClipboardCheck }
                 ].map((item) => {
                   const Icon = item.icon;
@@ -483,6 +489,119 @@ export const CustomerDashboard: React.FC<CustomerDashboardProps> = ({ activeTab,
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* AVAILABLE COMMUTER ROUTES */}
+              {activeTab === 'customer-routes' && (
+                <div className="space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-2 border-b border-gray-200 gap-3">
+                    <div>
+                      <h3 className="text-xs font-semibold text-gray-900">Available Commuter Trajectories</h3>
+                      <p className="text-[9px] text-gray-500">Discover travelers registered on your route corridors to coordinate cargo pickup.</p>
+                    </div>
+
+                    <div className="flex gap-2 shrink-0">
+                      <select
+                        value={filterFrom}
+                        onChange={(e) => setFilterFrom(e.target.value)}
+                        className="bg-white border border-gray-300 rounded-lg py-1 px-2.5 text-[10px] focus:border-[#0284c7] focus:outline-none w-36 text-gray-900"
+                      >
+                        <option value="">Filter From (All)...</option>
+                        <option value="Bhopal Hub Node">Bhopal Hub Node</option>
+                        <option value="Sehore Terminal">Sehore Terminal</option>
+                        <option value="Kurawar Gateway">Kurawar Gateway</option>
+                        <option value="Vidisha Portal">Vidisha Portal</option>
+                        <option value="Sonagir Depot">Sonagir Depot</option>
+                        <option value="Mandideep Sector">Mandideep Sector</option>
+                        <option value="Dewas Connector">Dewas Connector</option>
+                        <option value="Sagar Trunk Stop">Sagar Trunk Stop</option>
+                      </select>
+
+                      <select
+                        value={filterTo}
+                        onChange={(e) => setFilterTo(e.target.value)}
+                        className="bg-white border border-gray-300 rounded-lg py-1 px-2.5 text-[10px] focus:border-[#0284c7] focus:outline-none w-36 text-gray-900"
+                      >
+                        <option value="">Filter To (All)...</option>
+                        <option value="Bhopal Hub Node">Bhopal Hub Node</option>
+                        <option value="Sehore Terminal">Sehore Terminal</option>
+                        <option value="Kurawar Gateway">Kurawar Gateway</option>
+                        <option value="Vidisha Portal">Vidisha Portal</option>
+                        <option value="Sonagir Depot">Sonagir Depot</option>
+                        <option value="Mandideep Sector">Mandideep Sector</option>
+                        <option value="Dewas Connector">Dewas Connector</option>
+                        <option value="Sagar Trunk Stop">Sagar Trunk Stop</option>
+                      </select>
+
+                      {(filterFrom || filterTo) && (
+                        <button
+                          onClick={() => {
+                            setFilterFrom('');
+                            setFilterTo('');
+                          }}
+                          className="bg-gray-100 hover:bg-gray-205 border border-gray-300 text-gray-700 py-1 px-2.5 rounded-lg text-[9px] uppercase tracking-wider transition-colors"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {trajectories
+                      .filter((t) => {
+                        const matchF = !filterFrom || t.from.toLowerCase().includes(filterFrom.toLowerCase());
+                        const matchT = !filterTo || t.to.toLowerCase().includes(filterTo.toLowerCase());
+                        return matchF && matchT;
+                      })
+                      .map((traj) => (
+                        <div key={traj.id} className="bg-white border border-gray-250 p-4 rounded-xl space-y-3 hover:border-[#0284c7]/30 transition-all duration-300 shadow-sm flex flex-col justify-between">
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-xs text-[#0284c7] font-mono">{traj.id}</span>
+                            <span className="bg-green-50 text-green-700 border border-green-200 px-1.5 py-0.5 rounded text-[8px] font-black uppercase font-mono">
+                              ACTIVE TRAJECTORY
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5 text-[10px] border-y border-gray-200 py-2 text-gray-600">
+                            <div className="flex justify-between">
+                              <span>Traveler:</span>
+                              <strong className="text-gray-900">{traj.partnerName}</strong>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Phone:</span>
+                              <strong className="text-gray-900">{traj.partnerPhone}</strong>
+                            </div>
+                            <div className="flex justify-between">
+                              <span>Segment Corridor:</span>
+                              <strong className="text-gray-900">{traj.from.split(' ')[0]} ➔ {traj.to.split(' ')[0]}</strong>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => {
+                              alert(`Simulating WhatsApp chat initiation with ${traj.partnerName} (${traj.partnerPhone}) for route ${traj.from} to ${traj.to}`);
+                            }}
+                            className="w-full bg-gray-900 hover:bg-gray-800 text-white font-bold py-1.5 rounded-lg text-[9px] uppercase tracking-wider transition-colors flex items-center justify-center gap-1"
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-ping" />
+                            <span>Connect on WhatsApp</span>
+                          </button>
+                        </div>
+                      ))}
+
+                    {trajectories.filter((t) => {
+                      const matchF = !filterFrom || t.from.toLowerCase().includes(filterFrom.toLowerCase());
+                      const matchT = !filterTo || t.to.toLowerCase().includes(filterTo.toLowerCase());
+                      return matchF && matchT;
+                    }).length === 0 && (
+                      <div className="col-span-2 text-center py-12 bg-gray-50 border border-gray-200 rounded-xl shadow-sm">
+                        <Compass className="w-8 h-8 text-gray-300 mx-auto mb-2 animate-spin-slow" />
+                        <p className="text-[10px] text-gray-555 font-semibold">No commuter trajectories match your criteria.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
